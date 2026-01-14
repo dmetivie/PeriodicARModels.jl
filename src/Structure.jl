@@ -306,9 +306,11 @@ load_model(file) = load(file)["model"]
     avg_day
     max_day
     df_month
+    p
+    k
 end
 
-function CaracteristicsSeries(series)
+function CaracteristicsSeries(series, p=0, k=0)
     Days_list = GatherYearScenario(series[!, 2], series.DATE)
     avg_day = mean.(Days_list)
     max_day = maximum.(Days_list)
@@ -317,5 +319,5 @@ function CaracteristicsSeries(series)
         @transform(:MONTH = month.(:DATE)) #add month column
         @by(:MONTH, :MONTHLY_MEAN = mean(:TEMP), :MONTHLY_STD = std(:TEMP), :MONTHLY_MAX = maximum(:TEMP)) # grouby MONTH + takes the mean/std in each category 
     end
-    return CaracteristicsSeries(avg_day, max_day, df_month)
+    return CaracteristicsSeries(avg_day, max_day, df_month, p, k)
 end
