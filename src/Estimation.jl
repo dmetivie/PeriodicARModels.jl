@@ -53,8 +53,8 @@ function Opp_Log_Monthly_Likelihood_AR_nspart(model::MonthlySWG, z, n2m, p, N)
     nspart = model.trend .+ model.period[dayofyear_Leap.(model.date_vec)]
     σ_nspart = model.σ_trend .* model.σ_period[dayofyear_Leap.(model.date_vec)]
     x = @views (nspart+σ_nspart.*z)[(p+1):N]
-    Var = @views ((σ_nspart.*model.σ[n2m]) .^ 2)[(p+1):N]
-    EV = [(nspart[t] + σ_nspart[t] * sum(model.Φ[n2m[t], i] * z[t-i] for i in 1:p)) for t in p+1:N] #Xₜ = EV(t) + ε in our model
+    Var = @views ((σ_nspart.*model.monthlyAR.σ[n2m]) .^ 2)[(p+1):N]
+    EV = [(nspart[t] + σ_nspart[t] * sum(model.monthlyAR.Φ[n2m[t], i] * z[t-i] for i in 1:p)) for t in p+1:N] #Xₜ = EV(t) + ε in our model
     Opplogpdf = (log.(2π .* Var) + ((x .- EV).^2) ./ Var) / 2
     return sum(Opplogpdf)
 end
