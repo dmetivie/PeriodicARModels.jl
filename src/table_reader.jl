@@ -45,21 +45,25 @@ If the file name starts with "TN", "TG" or "TX", the function considers that it 
 Otherwise it considers that it is a file from the DRIAS database so it returns a dataframe with one column for the date and three columns for the three types of daily temperatures.
 """
 function extract_series(file::String; truncate_results=true, year=nothing)
-    file_name = splitdir(file)[2]
+    file_name = splitdir(file)[end]
     type_data = file_name[1:2]
     if type_data ∈ ["TN", "TG", "TX"]#startswith(file_name, "TN") || startswith(file_name, "TG") || startswith(file_name, "TX") #If it's an ECA&D file
-        table = CSV.read(file, DataFrame, normalizenames=true, skipto=22, header=21, ignoreemptyrows=true)
-        df = table[table[!, 5].==0, [3, 4]]
+        table = CSV.read(file, DataFrame, normalizenames=true, skipto=22, header=21, ignoreemptyrows=true, dateformat="yyyymmdd", types=Dict(:DATE => Date))
+        df = table[table[!, end].==0, [end - 2, end - 1]]
         df[!, 2] /= 10
+    elseif type_data == "er" #If it's a era5 file
+        df = CSV.read(file, DataFrame, normalizenames=true, ignoreemptyrows=true, dateformat="yyyy-mm-dd", types=Dict(:DATE => Date))
+    elseif type_data == "RC" #If it's a rcp file
+        df = CSV.read(file, DataFrame, normalizenames=true, comment="#", ignoreemptyrows=true, dateformat="yyyymmdd", types=Dict(:DATE => Date))
     else #If it's a DRIAS file
-        table = CSV.read(file, DataFrame, normalizenames=true, skipto=49, header=48, ignoreemptyrows=true)
+        table = CSV.read(file, DataFrame, normalizenames=true, skipto=49, header=48, ignoreemptyrows=true, dateformat="yyyymmdd", types=Dict(:DATE => Date))
         df = @chain table begin
             @rsubset :TN != -999.99
             @rsubset :TG != -999.99
             @rsubset :TX != -999.99
         end
     end
-    df.DATE = Date.(string.(df.DATE), dateformat"yyyymmdd")
+    # df.DATE = Date.(string.(df.DATE), dateformat"yyyymmdd")
     df = isnothing(year) ? df : df[Date(year).<=df.DATE.<Date(year + 1), :]
     return truncate_results ? truncate_MV(df) : df
 end
