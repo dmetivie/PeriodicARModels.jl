@@ -1,6 +1,6 @@
 name = "PeriodicARModels"
 uuid = "8fb27774-97dd-4e71-ba3d-ec1f27cf7f43"
-version = "0.0.1"
+version = "0.0.2"
 authors = ["ArnaudG0649 <arnaudcmc@hotmail.com> and contributors"]
 
 [deps]
