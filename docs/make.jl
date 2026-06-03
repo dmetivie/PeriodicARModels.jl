@@ -8,10 +8,10 @@ DocMeta.setdocmeta!(PeriodicARModels, :DocTestSetup, :(using PeriodicARModels); 
 
 makedocs(;
     modules=[PeriodicARModels],
-    authors="ArnaudG0649 <arnaudcmc@hotmail.com> and contributors",
+    authors="Arnaud Gonin <arnaudcmc@hotmail.com> and David Métivier <david.metivier@inrae.fr>",
     sitename="PeriodicARModels.jl",
     format=Documenter.HTML(;
-        canonical="https://ArnaudG0649.github.io/PeriodicARModels.jl",
+        canonical="https://dmetivie.github.io/PeriodicARModels.jl",
         edit_link="master",
         assets=String[],
     ),
@@ -23,7 +23,7 @@ makedocs(;
 )
 
 deploydocs(;
-    repo="github.com/ArnaudG0649/PeriodicARModels.jl",
+    repo="github.com/dmetivie/PeriodicARModels.jl",
     devbranch="master",
 )
 

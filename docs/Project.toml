@@ -1,3 +1,9 @@
 [deps]
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 PeriodicARModels = "8fb27774-97dd-4e71-ba3d-ec1f27cf7f43"
+
+[sources]
+PeriodicARModels = {path = ".."}
+
+[compat]
+Documenter = "1"

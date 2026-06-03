@@ -1,7 +1,10 @@
 name = "PeriodicARModels"
 uuid = "8fb27774-97dd-4e71-ba3d-ec1f27cf7f43"
-version = "0.0.2"
-authors = ["ArnaudG0649 <arnaudcmc@hotmail.com> and contributors"]
+version = "0.0.3"
+authors = ["Arnaud Gonin <arnaudcmc@hotmail.com>, David Métivier <david.metivier@inrae.fr> and contributors"]
+
+[workspace]
+projects = ["test", "docs", "benchmark"]
 
 [deps]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
@@ -51,9 +54,3 @@ RegularizationTools = "0.6"
 Statistics = "1"
 StatsBase = "0.34"
 julia = "1.12"
-
-[extras]
-Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-
-[targets]
-test = ["Test"]
