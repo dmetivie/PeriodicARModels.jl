@@ -5,123 +5,38 @@ using Test
 ##Seed for random reproducibility
 Random.seed!(1234)
 
-# GetAllAttributes(object) = map(field -> getfield(object, field), fieldnames(typeof(object)))
-# ## Source : https://discourse.julialang.org/t/get-the-name-and-the-value-of-every-field-for-an-object/87052/2
 
-# #For evaluation of sample and estimated paramaters
-# α=1E-4
-# AreClose(x::AbstractArray{T},y::AbstractArray{T},α=α) where T <: AbstractFloat = maximum(abs.(x .- y)) < α
-# AreClose(x::AbstractArray{T},y::AbstractArray{T},α=α) where T <: AbstractArray{<:AbstractFloat} = AreClose(vcat(x...),vcat(y...),α)
-# FlatΦ(Φ,d=2) = vcat([hcat([reshape(v_sub,(1,d^2)) for v_sub in Φ[m]]...) for m in 1:12]...)
-# AreClose(x::AbstractVector{T},y::AbstractVector{T},α=α) where T <: AbstractVector{<:AbstractMatrix} = AreClose(FlatΦ(x),FlatΦ(y),α)
+# ── Synthetic toy data (used in all tests below) ─────────────────────────────
 
+# Shared synthetic data: 10 years of daily dates starting 2001-01-01
+const TOY_START = Date(2001, 1, 1)
+const TOY_END = Date(2050, 12, 31)
+const TOY_DATE = collect(TOY_START:Day(1):TOY_END)
+const TOY_N = length(TOY_DATE)
+const TOY_END_short = Date(2010, 12, 31)
+const TOY_DATE_short = collect(TOY_START:Day(1):TOY_END_short)
+const TOY_N_short = length(TOY_DATE_short)
+const TOY_RNG = MersenneTwister(42)
 
-# # AreClose(model_uni.monthlyAR.Φ, ref_data[1].Φ)
-# # AreClose(model_uni.monthlyAR.σ, ref_data[1].σ)
-# # AreClose(sample_uni, ref_data[2])
+# Generate a univariate AR(1) series with known monthly parameters then white noise
+# Φ constant = 0.6, σ constant = 1.0 across months → easy ground-truth
+const TOY_Φ_TRUE = fill(0.6, 12, 1)   # 12 × p
+const TOY_σ_TRUE = fill(1.0, 12)
 
-# # AreClose(model_multi.monthlyAR.Φ, ref_data[3].Φ)
-# # AreClose(model_multi.monthlyAR.σ, ref_data[3].σ)
-# # AreClose(sample_multi, ref_data[4])
-
-
-# ##Station
-# file_TN = joinpath(@__DIR__, "..", "stations", "TN_Nantes.txt")
-# file_TX = joinpath(@__DIR__, "..", "stations", "TX_Nantes.txt")
-
-# ##### UNIVARIATE AR MODEL #####
-
-# ##Model hyperparameters
-# p = 2
-# method_ = "monthlyLL"                 # "mean", "median", "concat", "sumLL", "monthlyLL"
-# periodicity_model = "trigo"           # "trigo", "smooth", "autotrigo", "stepwise_trigo"
-# degree_period = 0                     # 0 => default value -> "trigo" : 8, "smooth" : 9, "autotrigo" : 50, "stepwise_trigo" : 50
-# Trendtype = "LOESS"                   # "LOESS", "polynomial", "null" (for no additive trend)
-# trendparam = nothing                  # nothing => default value -> "LOESS" : 0.08, "polynomial" : 1
-# σ_periodicity_model = "trigo"         # "trigo", "smooth", "autotrigo", "stepwise_trigo", "null" (for no multiplicative periodicity)
-# σ_degree_period = 0                   # 0 => default value -> "trigo" : 8, "smooth" : 9, "autotrigo" : 50, "stepwise_trigo" : 50
-# σ_Trendtype = "LOESS"                 # "LOESS", "polynomial", "null" (for no multiplicative trend)
-# σ_trendparam = nothing                # nothing => default value -> "LOESS" : 0.08, "polynomial" : 1
-
-# ##Simulations
-# n = 3
-
-# series_uni = first(extract_series(file_TN), 2000)
-
-# @time model_uni = MonthlySWG(series_uni[:, 2], series_uni.DATE,
-#     p=p,
-#     method_=method_,
-#     periodicity_model=periodicity_model,
-#     degree_period=degree_period,
-#     Trendtype=Trendtype,
-#     trendparam=trendparam,
-#     σ_periodicity_model=σ_periodicity_model,
-#     σ_degree_period=σ_degree_period,
-#     σ_Trendtype=σ_Trendtype,
-#     σ_trendparam=σ_trendparam)
-
-# @time sample_uni = rand(model_uni, y₁=model_uni.z[1:p], n_sim=n)
-
-
-# ##### MULTIVARIATE AR MODEL #####
-
-# ##Model hyperparameters
-# p = 2
-# method_ = "monthly"
-# periodicity_model = "trigo"       # "trigo", "smooth", "autotrigo", "stepwise_trigo"
-# degree_period = 2                 # 0 => default value -> "trigo" : 5, "smooth" : 9, "autotrigo" : 50, "stepwise_trigo" : 50
-# Trendtype = "LOESS"               # "LOESS", "polynomial", "null" (for no additive trend)
-# trendparam = 0.16                 # nothing => default value -> "LOESS" : 0.08, "polynomial" : 1
-# σ_periodicity_model = "trigo"     # "trigo", "smooth", "autotrigo", "stepwise_trigo", "null" (for no multiplicative periodicity)
-# σ_degree_period = 2               # 0 => default value -> "trigo" : 5, "smooth" : 9, "autotrigo" : 50, "stepwise_trigo" : 50
-# σ_Trendtype = "LOESS"             # "LOESS", "polynomial", "null" (for no multiplicative trend)
-# σ_trendparam = 0.16               # nothing => default value -> "LOESS" : 0.08, "polynomial" : 1
-
-# ##Simulations
-# n = 3
-
-# date_vec_multi, x_multi = Common_indexes(file_TN, file_TX)
-# date_vec_multi, x_multi = date_vec_multi[1:2000], x_multi[1:2000, :]
-
-# @time model_multi = MonthlySWG(x_multi, date_vec_multi,
-#     p=p,
-#     method_=method_,
-#     periodicity_model=periodicity_model,
-#     degree_period=degree_period,
-#     Trendtype=Trendtype,
-#     trendparam=trendparam,
-#     σ_periodicity_model=σ_periodicity_model,
-#     σ_degree_period=σ_degree_period,
-#     σ_Trendtype=σ_Trendtype,
-#     σ_trendparam=σ_trendparam)
-
-
-# @time sample_multi = rand(model_multi, y₁=model_multi.z[1:p, :], n_sim=n)
-
-# # include(joinpath(@__DIR__, "testnodict.jl"))
-
-# ref_data = load(joinpath(@__DIR__, "references.jld2"))["ref_data"]
-
-# @testset "PeriodicARModels.jl" begin
-#     @test AreClose(model_uni.monthlyAR.Φ, ref_data[1].Φ)
-#     @test AreClose(model_uni.monthlyAR.σ, ref_data[1].σ)
-#     @test AreClose(sample_uni, ref_data[2])
-#     rand(model_uni, n_sim=2)
-#     rand(model_uni)
-
-#     @test AreClose(model_multi.monthlyAR.Φ, ref_data[3].Φ)
-#     @test AreClose(model_multi.monthlyAR.σ, ref_data[3].σ)
-#     @test AreClose(sample_multi, ref_data[4])
-#     rand(model_multi, n_sim=2)
-#     rand(model_multi)
-
-# end
+let rng = MersenneTwister(0)
+    global TOY_Z = zeros(TOY_N)
+    n2m = month.(TOY_DATE)
+    TOY_Z[1] = randn(rng)
+    for t in 2:TOY_N
+        TOY_Z[t] = TOY_Φ_TRUE[n2m[t], 1] * TOY_Z[t-1] + TOY_σ_TRUE[n2m[t]] * randn(rng)
+    end
+end
 
 # ── Bug / performance regression tests ────────────────────────────────────────
 
 @testset "fitted_periodicity_fonc: return types and fit quality" begin
-    x_ = series_uni[:, 2]
-    date_ = series_uni.DATE
+    x_ = TOY_Z
+    date_ = TOY_DATE
 
     # return_parameters=false → plain Function, not a Tuple
     f = PeriodicARModels.fitted_periodicity_fonc(x_, date_, OrderTrig=3)
@@ -140,8 +55,8 @@ Random.seed!(1234)
 end
 
 @testset "fitted_periodicity_fonc_auto: return types" begin
-    x_ = series_uni[:, 2]
-    date_ = series_uni.DATE
+    x_ = TOY_Z
+    date_ = TOY_DATE
 
     # return_parameters=false → (Function, Integer); first element must be callable
     f_auto, I_auto = PeriodicARModels.fitted_periodicity_fonc_auto(x_, date_)
@@ -154,81 +69,73 @@ end
     # return_parameters=true → should return (Function, AbstractVector, Integer)
     # BUG: precedence in return statement yields ((func, beta), I) instead of (func, beta, I)
     result_p = PeriodicARModels.fitted_periodicity_fonc_auto(x_, date_, return_parameters=true)
-    @test result_p isa Tuple{<:Function, <:AbstractVector, <:Integer}
+    @test result_p isa Tuple{<:Function,<:AbstractVector,<:Integer}
 end
 
 @testset "autotrigo periodicity mode in MonthlySWG" begin
     # BUG: decompose assigns the (func, I) tuple from fitted_periodicity_fonc_auto
     # directly to autotrigo_function without unpacking, so broadcasting it fails.
-    @test MonthlySWG(series_uni[:, 2], series_uni.DATE,
+    @test MonthlySWG(TOY_Z, TOY_DATE,
         p=1, periodicity_model="autotrigo") isa MonthlySWG
 end
 
 @testset "Simulation: output shapes and finite values" begin
-    N_uni   = length(series_uni.DATE)
-    N_multi = length(date_vec_multi)
+    # Build minimal toy models for simulation tests
+    _model_uni = MonthlySWG(TOY_Z[1:TOY_N_short], TOY_DATE_short; p=1, Trendtype="null",
+        periodicity_model="trigo", degree_period=2,
+        σ_periodicity_model="null", σ_Trendtype="null")
+
+    let rng2 = MersenneTwister(1), _n2m = month.(TOY_DATE_short), _z2 = zeros(TOY_N_short)
+        _z2[1] = randn(rng2)
+        for t in 2:TOY_N_short
+            _z2[t] = 0.4 * _z2[t-1] + 0.8 * randn(rng2)
+        end
+        _Z2 = hcat(TOY_Z[1:TOY_N_short], _z2)
+        global _model_multi = MonthlySWG(_Z2, TOY_DATE_short; p=1, Trendtype="null",
+            periodicity_model="trigo", degree_period=2,
+            σ_periodicity_model="null", σ_Trendtype="null")
+    end
 
     # Univariate: n_sim vectors of length N
-    sims_uni = rand(model_uni, n_sim=3)
+    sims_uni = rand(_model_uni, n_sim=3)
     @test length(sims_uni) == 3
-    @test all(s -> length(s) == N_uni, sims_uni)
+    @test all(s -> length(s) == TOY_N_short, sims_uni)
     @test all(s -> all(isfinite, s), sims_uni)
 
     # Multivariate correction="resample": must terminate and return (N, d) matrices
     # (guards against the unbounded while-loop on ordering constraint)
-    sims_resample = rand(model_multi, n_sim=2, correction="resample")
+    sims_resample = rand(_model_multi, n_sim=2, correction="resample")
     @test length(sims_resample) == 2
-    @test all(s -> size(s) == (N_multi, 2), sims_resample)
+    @test all(s -> size(s) == (TOY_N_short, 2), sims_resample)
     @test all(s -> all(isfinite, s), sims_resample)
 
     # correction="null" must also return correct shapes
-    sims_null = rand(model_multi, n_sim=2, correction="null")
+    sims_null = rand(_model_multi, n_sim=2, correction="null")
     @test length(sims_null) == 2
-    @test all(s -> size(s) == (N_multi, 2), sims_null)
+    @test all(s -> size(s) == (TOY_N_short, 2), sims_null)
 end
 
 @testset "OLS: inv(A'A)*A'*x ≈ A\\x for trigonometric design matrix" begin
     # Verify numerical consistency between the explicit normal-equations form used
     # in fitted_periodicity_fonc and the more stable backslash solve.
-    x_ = series_uni[:, 2]
-    date_ = series_uni.DATE
-    N  = length(x_)
-    ω  = 2π / 365.2422
-    K  = 5
+    x_ = TOY_Z
+    date_ = TOY_DATE
+    N = length(x_)
+    ω = 2π / 365.2422
+    K = 5
     n2t = dayofyear_Leap.(date_)
     cols = [ones(N)]
     for j in 1:K
         push!(cols, cos.(ω * j * n2t))
         push!(cols, sin.(ω * j * n2t))
     end
-    Design   = stack(cols)
+    Design = stack(cols)
     beta_inv = inv(transpose(Design) * Design) * transpose(Design) * x_
-    beta_ls  = Design \ x_
+    beta_ls = Design \ x_
     @test maximum(abs.(beta_inv .- beta_ls)) < 1e-8
 end
 
 # ── Synthetic toy examples ────────────────────────────────────────────────────
-
-# Shared synthetic data: 10 years of daily dates starting 2001-01-01
-const TOY_START = Date(2001, 1, 1)
-const TOY_END   = Date(2010, 12, 31)
-const TOY_DATE  = collect(TOY_START:Day(1):TOY_END)
-const TOY_N     = length(TOY_DATE)
-const TOY_RNG   = MersenneTwister(42)
-
-# Generate a univariate AR(1) series with known monthly parameters then white noise
-# Φ constant = 0.6, σ constant = 1.0 across months → easy ground-truth
-const TOY_Φ_TRUE = fill(0.6, 12, 1)   # 12 × p
-const TOY_σ_TRUE = fill(1.0, 12)
-
-let rng = MersenneTwister(0)
-    global TOY_Z = zeros(TOY_N)
-    n2m = month.(TOY_DATE)
-    TOY_Z[1] = randn(rng)
-    for t in 2:TOY_N
-        TOY_Z[t] = TOY_Φ_TRUE[n2m[t], 1] * TOY_Z[t-1] + TOY_σ_TRUE[n2m[t]] * randn(rng)
-    end
-end
 
 @testset "Toy — MonthlyAR fit: types and parameter shapes" begin
     ar = MonthlyAR(TOY_Z, TOY_DATE, 1)
@@ -247,25 +154,98 @@ end
     # With 10 years of data the estimates should be within 0.15 of the truth
     tol = 0.15
     @test maximum(abs.(ar.Φ[:, 1] .- 0.6)) < tol
-    @test maximum(abs.(ar.σ .- 1.0))        < tol
+    @test maximum(abs.(ar.σ .- 1.0)) < tol
+end
+
+@testset "Toy — MonthlyAR fit: parameter recovery (10% relative tolerance)" begin
+    ar = MonthlyAR(TOY_Z, TOY_DATE, 1)
+
+    rel_tol = 0.15
+    @test maximum(abs.(ar.Φ[:, 1] .- 0.6) ./ 0.6) < rel_tol
+    @test maximum(abs.(ar.σ .- 1.0) ./ 1.0) < rel_tol
+end
+
+@testset "Toy — MonthlyAR fit: AR(2) parameter recovery" begin
+    # Generate an AR(2) series with Φ₁=0.5, Φ₂=0.2, σ=1.0 (same across months)
+    Φ1_true = 0.5
+    Φ2_true = 0.3
+    σ_true = 0.5
+    z2 = zeros(TOY_N)
+    n2m = month.(TOY_DATE)
+    rng_ar2 = MersenneTwister(99)
+    z2[1] = randn(rng_ar2)
+    z2[2] = randn(rng_ar2)
+    for t in 3:TOY_N
+        z2[t] = Φ1_true * z2[t-1] + Φ2_true * z2[t-2] + σ_true * randn(rng_ar2)
+    end
+
+    ar2 = MonthlyAR(z2, TOY_DATE, 2)
+
+    @test size(ar2.Φ) == (12, 2)
+    @test length(ar2.σ) == 12
+    rel_tol = 0.20
+    @test maximum(abs.(ar2.Φ[:, 1] .- Φ1_true) ./ Φ1_true) < rel_tol   # AR(1) coefficient
+    @test maximum(abs.(ar2.Φ[:, 2] .- Φ2_true) ./ Φ2_true) < rel_tol   # AR(2) coefficient
+    @test maximum(abs.(ar2.σ .- σ_true) ./ σ_true) < rel_tol
+end
+
+@testset "Toy — MonthlySWG fit: AR coefficient recovery (null trend, null σ-periodicity)" begin
+    # With no trend and no σ-periodicity, z == standardised residuals ≈ TOY_Z,
+    # so the monthly AR fit inside MonthlySWG should recover the same parameters
+    # as a direct MonthlyAR fit.
+    model = MonthlySWG(TOY_Z, TOY_DATE; p=1, Trendtype="null",
+        periodicity_model="trigo", degree_period=2,
+        σ_periodicity_model="null", σ_Trendtype="null")
+    ar = MonthlyAR(TOY_Z, TOY_DATE, 1)
+
+    rel_tol = 0.10
+    # Φ recovered through MonthlySWG must agree with direct MonthlyAR fit
+    @test maximum(abs.(model.monthlyAR.Φ[:, 1] .- ar.Φ[:, 1]) ./ (abs.(ar.Φ[:, 1]) .+ 1e-8)) < rel_tol
+    @test maximum(abs.(model.monthlyAR.σ .- ar.σ) ./ ar.σ) < rel_tol
+    # And the AR fit itself should still be close to the ground truth
+    @test maximum(abs.(model.monthlyAR.Φ[:, 1] .- 0.6) ./ 0.6) < rel_tol
+    @test maximum(abs.(model.monthlyAR.σ .- 1.0) ./ 1.0) < rel_tol
+end
+
+@testset "Toy — Multivariate MonthlyAR fit: diagonal coefficient recovery" begin
+    # Two independent AR(1) series → the diagonal of Φ[m][1] should recover
+    # the two univariate coefficients (0.6 and 0.4) and off-diagonals ≈ 0.
+    rng2 = MersenneTwister(1)
+    z2 = zeros(TOY_N)
+    n2m = month.(TOY_DATE)
+    z2[1] = randn(rng2)
+    for t in 2:TOY_N
+        z2[t] = 0.4 * z2[t-1] + 0.8 * randn(rng2)
+    end
+    Z2 = hcat(TOY_Z, z2)
+
+    ar_multi = MonthlyAR(Z2, TOY_DATE, 1)
+
+    tol = 0.15
+    # Collect the [1,1] and [2,2] diagonal entries across the 12 months
+    diag11 = [ar_multi.Φ[m][1][1, 1] for m in 1:12]
+    diag22 = [ar_multi.Φ[m][1][2, 2] for m in 1:12]
+
+    @test maximum(abs.(diag11 .- 0.6)) < tol   # channel 1 AR coef ≈ 0.6
+    @test maximum(abs.(diag22 .- 0.4)) < tol   # channel 2 AR coef ≈ 0.4
 end
 
 @testset "Toy — MonthlyAR rand: output length and finiteness" begin
-    ar    = MonthlyAR(TOY_Z, TOY_DATE, 1)
-    n2m   = month.(TOY_DATE)
+    ar = MonthlyAR(TOY_Z, TOY_DATE, 1)
+    n2m = month.(TOY_DATE)
 
-    sim1  = rand(ar, n2m)
+    sim1 = rand(ar, n2m)
     @test length(sim1) == TOY_N
     @test all(isfinite, sim1)
 
-    sims  = rand(ar, n2m; n_sim=5)
+    sims = rand(ar, n2m; n_sim=5)
     @test length(sims) == 5
     @test all(s -> length(s) == TOY_N, sims)
     @test all(s -> all(isfinite, s), sims)
 end
 
 @testset "Toy — MonthlyAR rand: reproducibility with fixed RNG" begin
-    ar  = MonthlyAR(TOY_Z, TOY_DATE, 1)
+    ar = MonthlyAR(TOY_Z, TOY_DATE, 1)
     n2m = month.(TOY_DATE)
 
     s1 = rand(MersenneTwister(7), ar, n2m)
@@ -276,8 +256,8 @@ end
 @testset "Toy — MonthlySWG fit: types and field shapes" begin
     # Null trend, simple trigonometric periodicity (order 2) for speed
     model = MonthlySWG(TOY_Z, TOY_DATE; p=1, Trendtype="null",
-                       periodicity_model="trigo", degree_period=2,
-                       σ_periodicity_model="null", σ_Trendtype="null")
+        periodicity_model="trigo", degree_period=2,
+        σ_periodicity_model="null", σ_Trendtype="null")
 
     @test model isa MonthlySWG
     @test model.monthlyAR isa MonthlyAR
@@ -292,8 +272,8 @@ end
 
 @testset "Toy — MonthlySWG rand: output length and finiteness" begin
     model = MonthlySWG(TOY_Z, TOY_DATE; p=1, Trendtype="null",
-                       periodicity_model="trigo", degree_period=2,
-                       σ_periodicity_model="null", σ_Trendtype="null")
+        periodicity_model="trigo", degree_period=2,
+        σ_periodicity_model="null", σ_Trendtype="null")
 
     sim1 = rand(model)
     @test length(sim1) == TOY_N
@@ -307,12 +287,12 @@ end
 
 @testset "Toy — MonthlySWG rand: fixed initial condition y₁" begin
     model = MonthlySWG(TOY_Z, TOY_DATE; p=1, Trendtype="null",
-                       periodicity_model="trigo", degree_period=2,
-                       σ_periodicity_model="null", σ_Trendtype="null")
+        periodicity_model="trigo", degree_period=2,
+        σ_periodicity_model="null", σ_Trendtype="null")
 
-    y₁  = model.z[1:1]
-    s1  = rand(MersenneTwister(3), model; y₁=y₁)
-    s2  = rand(MersenneTwister(3), model; y₁=y₁)
+    y₁ = model.z[1:1]
+    s1 = rand(MersenneTwister(3), model; y₁=y₁)
+    s2 = rand(MersenneTwister(3), model; y₁=y₁)
     @test s1 == s2
     @test length(s1) == TOY_N
 end
@@ -320,8 +300,8 @@ end
 @testset "Toy — Multivariate MonthlyAR fit: types and parameter shapes" begin
     # Build a 2-dim series: col 1 = TOY_Z, col 2 = independent AR(1) with Φ=0.4
     rng2 = MersenneTwister(1)
-    z2   = zeros(TOY_N)
-    n2m  = month.(TOY_DATE)
+    z2 = zeros(TOY_N)
+    n2m = month.(TOY_DATE)
     z2[1] = randn(rng2)
     for t in 2:TOY_N
         z2[t] = 0.4 * z2[t-1] + 0.8 * randn(rng2)
@@ -346,11 +326,3 @@ end
     @test all(s -> size(s) == (TOY_N, 2), sims2)
     @test all(s -> all(isfinite, s), sims2)
 end
-
-
-
-# x_ = series_uni[:, 2]
-# trend = LOESS(x_, trendparam)
-# y_ = x_ - trend
-# trigo_function = fitted_periodicity_fonc(y_, series_uni.DATE, OrderTrig=degree_period)
-# periodicity, period = trigo_function.(series_uni.DATE), trigo_function.(Date(0):(Date(1)-Day(1)))
