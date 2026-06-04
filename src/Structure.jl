@@ -267,7 +267,7 @@ function decompose(x, date_vec,
             smooth_function = fitted_smooth_periodicity_fonc(y_, date_vec, OrderDiff=degree_period)
             periodicity, period = smooth_function.(date_vec), smooth_function.(Date(0):(Date(1)-Day(1)))
         elseif periodicity_model == "autotrigo"
-            autotrigo_function = fitted_periodicity_fonc_auto(y_, date_vec, MaxOrder=degree_period)
+            autotrigo_function, _ = fitted_periodicity_fonc_auto(y_, date_vec, MaxOrder=degree_period)
             periodicity, period = autotrigo_function.(date_vec), autotrigo_function.(Date(0):(Date(1)-Day(1)))
         end
         z_ = y_ - periodicity
@@ -296,7 +296,7 @@ function decompose(x, date_vec,
             smooth_function = fitted_smooth_periodicity_fonc(z_ .^ 2, date_vec, OrderDiff=σ_degree_period)
             σ_periodicity, σ_period = smooth_function.(date_vec) .^ 0.5, smooth_function.(Date(0):(Date(1)-Day(1))) .^ 0.5
         elseif σ_periodicity_model == "autotrigo"
-            autotrigo_function = fitted_periodicity_fonc_auto(z_ .^ 2, date_vec, MaxOrder=σ_degree_period)
+            autotrigo_function, _ = fitted_periodicity_fonc_auto(z_ .^ 2, date_vec, MaxOrder=σ_degree_period)
             σ_periodicity, σ_period = autotrigo_function.(date_vec) .^ 0.5, autotrigo_function.(Date(0):(Date(1)-Day(1))) .^ 0.5
         else
             σ_periodicity, σ_period = ones(length(z_)), ones(366)

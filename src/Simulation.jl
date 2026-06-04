@@ -45,20 +45,26 @@ end
 
 
 #For the resample correction
-function SimulatePairedScenarioCor!(L, p, n2t, Φ, Σ, d, σ_nspart_, nspart_, rng)
+function SimulatePairedScenarioCor!(L, p, n2t, Φ, Σ, d, σ_nspart_, nspart_, rng; max_resample=1000)
     for (i, t) in enumerate(n2t[p+1:end])
         L[i+p, :] = sum(Φ[t][j] * L[i+p-j, :] for j in 1:p) .+ Σ[t] * randn(rng, d)
+        n_try = 1
         while @views L[i+p, 1] * σ_nspart_[i+p, 1] + nspart_[i+p, 1] > L[i+p, 2] * σ_nspart_[i+p, 2] + nspart_[i+p, 2] #While it is not good it tries again
             L[i+p, :] = sum(Φ[t][j] * L[i+p-j, :] for j in 1:p) .+ Σ[t] * randn(rng, d)
+            n_try += 1
+            n_try >= max_resample && (@warn "Max resampling ($max_resample) reached at step $(i+p); ordering constraint may not hold."; break)
         end
     end
     return L
 end
-function SimulatePairedScenarioCor!(L, p, n2t, Φ, Σ, d, rng)
+function SimulatePairedScenarioCor!(L, p, n2t, Φ, Σ, d, rng; max_resample=1000)
     for (i, t) in enumerate(n2t[p+1:end])
         L[i+p, :] = sum(Φ[t][j] * L[i+p-j, :] for j in 1:p) .+ Σ[t] * randn(rng, d)
+        n_try = 1
         while @views L[i+p, 1] > L[i+p, 2] #While it is not good it tries again
             L[i+p, :] = sum(Φ[t][j] * L[i+p-j, :] for j in 1:p) .+ Σ[t] * randn(rng, d)
+            n_try += 1
+            n_try >= max_resample && (@warn "Max resampling ($max_resample) reached at step $(i+p); ordering constraint may not hold."; break)
         end
     end
     return L

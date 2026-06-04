@@ -1,6 +1,6 @@
 name = "PeriodicARModels"
 uuid = "8fb27774-97dd-4e71-ba3d-ec1f27cf7f43"
-version = "0.0.3"
+version = "0.0.4"
 authors = ["Arnaud Gonin <arnaudcmc@hotmail.com>, David Métivier <david.metivier@inrae.fr> and contributors"]
 
 [workspace]
@@ -27,6 +27,7 @@ OrderedCollections = "bac558e1-5e72-5ebc-8fee-abe8a469f55d"
 Polynomials = "f27b6e38-b328-58d1-80ce-0feddd5e7a45"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 RegularizationTools = "29dad682-9a27-4bc3-9c72-016788665182"
+SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 
@@ -47,10 +48,11 @@ LinearAlgebra = "1.11"
 Loess = "0.6"
 Optimization = "5"
 OptimizationOptimJL = "0.4"
-OrderedCollections = "1"
+OrderedCollections = "1, 2"
 Polynomials = "4.1"
 Random = "1.11"
 RegularizationTools = "0.6"
+SciMLBase = "2, 3"
 Statistics = "1"
 StatsBase = "0.34"
 julia = "1.12"

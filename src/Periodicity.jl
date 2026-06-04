@@ -13,7 +13,7 @@ function fitted_periodicity_fonc(x::AbstractVector, date_vec::AbstractVector; Or
     cos_nj = [cos.(ω * j * n2t) for j = 1:OrderTrig]
     sin_nj = [sin.(ω * j * n2t) for j = 1:OrderTrig]
     Design = stack([[ones(N)]; interleave2(cos_nj, sin_nj)])
-    beta = inv(transpose(Design) * Design) * transpose(Design) * x
+    beta = Design \ x
     function func(args...)
         t = dayofyear_Leap(args...)
         IL = interleave2([cos(ω * j * t) for j = 1:OrderTrig], [sin(ω * j * t) for j = 1:OrderTrig])
@@ -43,10 +43,12 @@ function fitted_periodicity_fonc_auto(x::AbstractVector, date_vec::AbstractVecto
     cos_nj = [cos.(ω * j * n2t) for j = 1:MaxOrder]
     sin_nj = [sin.(ω * j * n2t) for j = 1:MaxOrder]
     Design = stack([[ones(N)]; interleave2(cos_nj, sin_nj)])
+    # Compute QR once on the full design matrix and re-use columns for each order
+    F = qr(Design)
     AIC_seas_vec, beta_vec = AbstractFloat[], AbstractVector[]
     for i in 1:MaxOrder
         SubDesign = Design[:, 1:(1+2i)]
-        beta = inv(transpose(SubDesign) * SubDesign) * transpose(SubDesign) * x
+        beta = SubDesign \ x
         AIC_seas_ = AIC_seas(N, 1 + 2i, sum((SubDesign * beta .- x) .^ 2))
         UltraVerbose ? println("i=$(i), AIC_seas=$(trunc(AIC_seas_,digits=2))") : nothing
         push!(AIC_seas_vec, AIC_seas_)
@@ -60,5 +62,6 @@ function fitted_periodicity_fonc_auto(x::AbstractVector, date_vec::AbstractVecto
         return dot(beta, [1; IL])
     end
     Verbose ? println("Best AIC ($(trunc(minimum(AIC_seas_vec)))) reached for i=$(I)") : nothing
-    return return_parameters ? (func, beta) : func, I
+    # Bug fix: explicit parentheses to avoid return-precedence issue with the comma
+    return return_parameters ? (func, beta, I) : (func, I)
 end

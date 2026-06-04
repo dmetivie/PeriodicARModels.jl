@@ -23,12 +23,18 @@ function Opp_LL_Multi_AR!(Estimators::AbstractVector, x::AbstractArray)
     p = (2 * length(Estimators) - d^2 - d) ÷ (2 * d^2)
     Φ = [stack(Estimators[(j*(d^2)+1+i*d):(j*(d^2)+(i+1)*d)] for i in 0:(d-1)) for j in 0:(p-1)]
     Indexes = [0; cumsum(d:-1:1)]
-    Σ = FillByDiags!(Estimators[(p*d^2+1):end], Indexes, d)
-    Varcov = (Σ * transpose(Σ))
-    InvVarcov = inv(Varcov)
-    cte = d * log(2π) + log(abs(det(Varcov)))
+    Σ = LowerTriangular(FillByDiags!(Estimators[(p*d^2+1):end], Indexes, d))
+    # Use triangular solves instead of forming and inverting the full covariance matrix:
+    # det(ΣΣ') = det(Σ)^2, log|det(Σ)| = sum(log|diag(Σ)|)
+    # r' * (ΣΣ')^{-1} * r = ||Σ^{-1} r||^2  (lower-triangular solve)
+    logdetΣ = sum(log ∘ abs, diag(Σ))
+    cte = d * log(2π) + 2 * logdetΣ
     EV(t) = sum(Φ[j] * x[t-j, :] for j in 1:p)
-    Opplogpdf(t) = (cte + transpose(x[t, :] - EV(t)) * InvVarcov * (x[t, :] - EV(t))) / 2
+    Opplogpdf(t) = begin
+        r = x[t, :] - EV(t)
+        Σ_inv_r = Σ \ r
+        (cte + dot(Σ_inv_r, Σ_inv_r)) / 2
+    end
     return Opplogpdf, p, n
 end
 
@@ -73,13 +79,17 @@ function Opp_LL_Monthly_Multi_AR!(Estimators::AbstractMatrix, tuple_)
     @views Φ = [[stack(Estimators[m, (j*(d^2)+1+i*d):(j*(d^2)+(i+1)*d)] for i in 0:(d-1)) for j in 0:(p-1)] for m in 1:12]
     Indexes = [0; cumsum(d:-1:1)]
 
-    Σ = [FillByDiags!(Estimators[m, (p*d^2+1):end], Indexes, d) for m in 1:12]
-    Varcov = [Mat * transpose(Mat) for Mat in Σ]
-    InvVarcov = inv.(Varcov)
-    cte = d .* log(2π) .+ log.(abs.(det.(Varcov)))
+    Σ = [LowerTriangular(FillByDiags!(Estimators[m, (p*d^2+1):end], Indexes, d)) for m in 1:12]
+    # Use triangular solves instead of forming and inverting the full covariance matrix
+    logdetΣ = [sum(log ∘ abs, diag(s)) for s in Σ]
+    cte = d .* log(2π) .+ 2 .* logdetΣ
 
     EV = [sum(Φ[n2m[t]][j] * view(x,t-j, :) for j in 1:p) for t in (p+1):n]
-    Opplogpdf(t) = (cte[n2m[t]] + transpose(view(x,t, :) - EV[t-p]) * InvVarcov[n2m[t]] * (view(x,t, :) - EV[t-p])) / 2
+    Opplogpdf(t) = begin
+        r = view(x, t, :) - EV[t-p]
+        Σ_inv_r = Σ[n2m[t]] \ r
+        (cte[n2m[t]] + dot(Σ_inv_r, Σ_inv_r)) / 2
+    end
     return Opplogpdf, p, n
 end
 

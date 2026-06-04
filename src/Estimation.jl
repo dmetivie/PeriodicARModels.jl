@@ -1,4 +1,5 @@
 using Optimization, Dates, Statistics, StatsBase, DataFrames, LinearAlgebra, OptimizationOptimJL, ForwardDiff #,Zygote
+import SciMLBase
 
 
 """
@@ -10,9 +11,10 @@ model with differents set of parameters for each month. For exemple, for the i�
 This function does not consider the likelihood of the initial conditiion x₁,x₂...xₚ
 """
 function Opp_Log_Monthly_Likelihood_AR(Estimators::AbstractMatrix, x::AbstractVector, n2m, p, N)
-    EV = [sum(Estimators[n2m[t], i] * x[t-i] for i in 1:p) for t in p+1:N] #Xₜ = EV(t) + ε in our model
-    Opplogpdf(t) = (log(2π * abs(Estimators[n2m[t], end])) + ((x[t] - EV[t-p])^2) / Estimators[n2m[t], end]) / 2
-    return sum(Opplogpdf.((p+1):N))
+    return sum((p+1):N) do t
+        ev = sum(Estimators[n2m[t], i] * x[t-i] for i in 1:p)
+        (log(2π * abs(Estimators[n2m[t], end])) + ((x[t] - ev)^2) / Estimators[n2m[t], end]) / 2
+    end
 end
 Opp_Log_Monthly_Likelihood_AR(Estimators::AbstractMatrix, tuple_::Tuple) = Opp_Log_Monthly_Likelihood_AR(Estimators, tuple_[1], tuple_[2], tuple_[3], tuple_[4])
 Opp_Log_Monthly_Likelihood_AR(Model::MonthlyAR, z, n2m, p, N) = Opp_Log_Monthly_Likelihood_AR(hcat(Model.Φ, Model.σ .^ 2), z, n2m, p, N)
