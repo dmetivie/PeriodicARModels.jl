@@ -2,7 +2,7 @@ using Dates, LinearAlgebra, DataInterpolations, RegularizationTools, GLM, Loess
 
 function PolyTrendFunc(x, order, index=eachindex(x); return_parameters=false)
     Design = [index .^ i for i in 0:order] |> stack
-    beta = inv(transpose(Design) * Design) * transpose(Design) * x
+    beta = Design \ x
     f(t) = dot(beta, [t^i for i in 0:order])
     return return_parameters ? (f, beta) : f
 end
