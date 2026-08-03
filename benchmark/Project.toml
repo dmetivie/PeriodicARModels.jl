@@ -10,3 +10,4 @@ PeriodicARModels = {path = ".."}
 
 [compat]
 BenchmarkTools = "1.8"
+Statistics = "1.11.1"
